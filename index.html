@@ -12,15 +12,15 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2312161F'/%3E%3Cg transform='translate(14 9) scale(.82)' fill='%23F2F4F7'%3E%3Crect x='17.5' y='4' width='13.5' height='13.5'/%3E%3Crect x='31' y='4' width='13.5' height='13.5'/%3E%3Crect x='44.5' y='4' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='17.5' width='13.5' height='13.5'/%3E%3Crect x='71.5' y='17.5' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='31' width='13.5' height='13.5'/%3E%3Crect x='71.5' y='31' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='44.5' width='13.5' height='13.5'/%3E%3Crect x='31' y='44.5' width='13.5' height='13.5'/%3E%3Crect x='44.5' y='44.5' width='13.5' height='13.5'/%3E%3Crect x='58' y='44.5' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='58' width='13.5' height='13.5'/%3E%3Crect x='44.5' y='58' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='71.5' width='13.5' height='13.5'/%3E%3Crect x='58' y='71.5' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='85' width='13.5' height='13.5'/%3E%3Crect x='71.5' y='85' width='13.5' height='13.5'/%3E%3Crect x='58' y='4' width='13.5' height='13.5' fill='%2319D3A2'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#12161F;--mint:#19D3A2;--fg:#F2F4F7;--muted:#ACB7CD}
+:root{--ink:#12161F;--mint:#19D3A2;--fg:#F2F4F7;--muted:#ACB7CD;--lcd:#C7F0D8;--lcd-ink:#43523D}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--ink)}
 body{position:relative;min-height:100vh;min-height:100dvh;overflow:hidden;color:var(--fg);font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;display:flex;flex-direction:column;justify-content:space-between;gap:24px;padding:24px;-webkit-tap-highlight-color:transparent}
 @media (max-width:600px){body{padding:16px}}
 a{color:inherit}
-#field{position:fixed;inset:0;z-index:0;display:block;touch-action:manipulation}
+#field{position:fixed;inset:0;z-index:0;display:block;touch-action:none}
 .top,.bottom{position:relative;z-index:1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;pointer-events:none}
 .top{align-items:flex-start}
 .panel{pointer-events:auto;background:var(--ink);border-radius:12px;padding:10px 14px}
@@ -31,6 +31,9 @@ a{color:inherit}
 .about small{font-size:13px;color:var(--muted)}
 .mail{display:inline-block;font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:800;font-size:clamp(22px,2.6vw,32px);letter-spacing:-.02em;text-decoration:underline;text-decoration-color:var(--mint);text-decoration-thickness:3px;text-underline-offset:6px}
 .mail:hover,.mail:focus-visible{text-decoration-color:#fff}
+.hud{pointer-events:auto;cursor:pointer;background:var(--ink);color:var(--mint);border:0;border-radius:12px;padding:10px 14px;font:700 15px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.14em;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-height:44px}
+.hud[hidden]{display:none}
+.hud small{font-weight:500;font-size:11px;letter-spacing:.1em;color:var(--muted)}
 .fade{animation:fade .9s ease-out 1.6s both}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.fade{animation:none}}
@@ -40,6 +43,7 @@ a{color:inherit}
 <canvas id="field" aria-hidden="true"></canvas>
 <header class="top fade">
 <h1 class="word panel">Rezaberi <span>Labs</span></h1>
+<button class="hud" id="hud" type="button" hidden aria-live="polite"><span id="hud-main">SCORE 0000</span><small id="hud-sub">BEST 0000</small></button>
 </header>
 <footer class="bottom fade">
 <div class="about panel">
@@ -53,158 +57,387 @@ a{color:inherit}
   'use strict';
   var cv = document.getElementById('field');
   var ctx = cv.getContext('2d');
+  var hud = document.getElementById('hud');
+  var hudMain = document.getElementById('hud-main');
+  var hudSub = document.getElementById('hud-sub');
   var R = ['XXXL.', 'X...X', 'X...X', 'XXXX.', 'X.X..', 'X..X.', 'X...X'];
-  var BASE = [27, 32, 45], MINT = [25, 211, 162], FG = [242, 244, 247];
-  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var RIPPLE_SPEED = 13;     // cells per second
-  var RIPPLE_WIDTH = 1.3;    // cells
-  var RIPPLE_LIFE = 2.8;     // seconds
-  var AMBIENT_EVERY = 5;     // seconds
-  var HOVER_FADE = 1.1;      // seconds for a lit tile to fade out
+  // [brand colour, Nokia LCD colour]; the field cross-fades between them while the game runs
+  var C = {
+    bg:    [[18, 22, 31],   [199, 240, 216]],
+    tile:  [[25, 30, 42],   [184, 222, 198]],
+    glow:  [[25, 211, 162], [152, 186, 164]],
+    logo:  [[242, 244, 247],[67, 82, 61]],
+    lit:   [[25, 211, 162], [67, 82, 61]],
+    snake: [[127, 162, 255],[67, 82, 61]],
+    food:  [[25, 211, 162], [67, 82, 61]]
+  };
+  var reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var touch = !!(window.matchMedia && matchMedia('(hover: none)').matches);
 
-  var W, H, dpr, size, gap, pitch, cols, rows, ox, oy, litC, litR, kind, kidx, heat;
-  var ripples = [], start = performance.now(), last = start, nextAmbient = 1.8;
-  var lastPt = null;
+  var RS = 2;                 // each logo pixel spans RS x RS tiles
+  var RIPPLE_SPEED = 24, RIPPLE_WIDTH = 2.2, RIPPLE_LIFE = 2.8, AMBIENT_EVERY = 5, HOVER_FADE = 1.1;
+  var AMBIENT_STEP = 0.15, GAME_STEP = 0.12, GAME_STEP_MIN = 0.06, SNAKE_LEN = 6;
+
+  var W, H, dpr, size, gap, pitch, cols, rows, ox, oy, Roc, Ror, litC, litR, kind, kidx, heat, c0, c1, r0, r1;
+  var ripples = [], start = performance.now(), last = start, nextAmbient = 1.8, lastPt = null;
+  var lcd = 0, lcdTarget = 0, rVis = 1, rVisTarget = 1;
+  var mode = 'ambient', snake = [], dir = { x: 1, y: 0 }, queue = [], acc = 0, step = GAME_STEP;
+  var seek = null, seekUntil = 0, nextSeek = 9, litGoneUntil = 0, litBackAt = -10;
+  var food = null, score = 0, best = 0, dieAt = 0, hudTimer = null;
+  try { best = parseInt(localStorage.getItem('rl-snake-best'), 10) || 0; } catch (e) {}
+
+  function clock() { return (performance.now() - start) / 1000; }
+  function at(c, r) { return r * cols + c; }
+  function pick(pair) { var a = pair[0], b = pair[1]; return [a[0] + (b[0] - a[0]) * lcd, a[1] + (b[1] - a[1]) * lcd, a[2] + (b[2] - a[2]) * lcd]; }
+  function blend(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function rgb(a) { return 'rgb(' + (a[0] | 0) + ',' + (a[1] | 0) + ',' + (a[2] | 0) + ')'; }
+  function pad4(n) { return ('000' + n).slice(-4); }
 
   function layout() {
     W = window.innerWidth; H = window.innerHeight;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     cv.style.width = W + 'px'; cv.style.height = H + 'px';
-    var p = Math.max(26, Math.min(64, W / 24));
-    size = Math.round(p * 0.86); gap = Math.round(p) - size; pitch = size + gap;
+    var p = Math.max(15, Math.min(30, W / 48));
+    size = Math.round(p * 0.82); gap = Math.round(p) - size; pitch = size + gap;
     cols = Math.ceil(W / pitch) + 1; rows = Math.ceil(H / pitch) + 1;
     ox = Math.round((W - (cols * pitch - gap)) / 2);
     oy = Math.round((H - (rows * pitch - gap)) / 2);
-    var oc = Math.max(1, cols - 5 - Math.round(cols * 0.18));
-    var or = Math.max(1, Math.floor((rows - 7) / 2));
-    litC = oc + 3; litR = or;
+    Roc = Math.max(1, cols - 5 * RS - Math.round(cols * 0.18));
+    Ror = Math.max(1, Math.floor((rows - 7 * RS) / 2));
+    litC = Roc + 3 * RS + (RS - 1) / 2; litR = Ror + (RS - 1) / 2;
+    c0 = Math.max(0, Math.ceil(-ox / pitch)); c1 = Math.min(cols - 1, Math.floor((W - ox - size) / pitch));
+    r0 = Math.max(0, Math.ceil(-oy / pitch)); r1 = Math.min(rows - 1, Math.floor((H - oy - size) / pitch));
     var n = cols * rows;
-    kind = new Uint8Array(n); kidx = new Float32Array(n);
-    heat = new Float32Array(n);
-    var k = 0;
+    kind = new Uint8Array(n); kidx = new Float32Array(n); heat = new Float32Array(n);
+    var order = {}, k = 0;
+    for (var pr = 0; pr < 7; pr++) for (var pc = 0; pc < 5; pc++) if (R[pr][pc] === 'X') order[pr * 5 + pc] = k++;
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < cols; c++) {
-        var lr = r - or, lc = c - oc, i = r * cols + c;
-        if (lr >= 0 && lr < 7 && lc >= 0 && lc < 5) {
-          var ch = R[lr][lc];
-          if (ch === 'X') { kind[i] = 1; kidx[i] = k++; }
-          else if (ch === 'L') { kind[i] = 2; kidx[i] = 18; }
-        }
+        if (r < Ror || c < Roc) continue;
+        var lr = Math.floor((r - Ror) / RS), lc = Math.floor((c - Roc) / RS);
+        if (lr >= 7 || lc >= 5) continue;
+        var ch = R[lr][lc], i = at(c, r);
+        if (ch === 'X') { kind[i] = 1; kidx[i] = order[lr * 5 + lc]; }
+        else if (ch === 'L') { kind[i] = 2; kidx[i] = 18; }
       }
     }
+    if (mode !== 'ambient') endGame(true);
+    resetSnake();
   }
 
+  // ---------- helpers ----------
   function cellAt(x, y) {
     var c = Math.floor((x - ox) / pitch), r = Math.floor((y - oy) / pitch);
     if (c < 0 || r < 0 || c >= cols || r >= rows) return -1;
-    return r * cols + c;
+    return at(c, r);
   }
-
-  function light(x, y) {
-    var i = cellAt(x, y);
-    if (i >= 0 && kind[i] === 0) heat[i] = 1;
+  function wrapC(c) { return c < c0 ? c1 : c > c1 ? c0 : c; }
+  function wrapR(r) { return r < r0 ? r1 : r > r1 ? r0 : r; }
+  function onSnake(c, r, skipTail) {
+    var n = snake.length - (skipTail ? 1 : 0);
+    for (var i = 0; i < n; i++) if (snake[i].c === c && snake[i].r === r) return true;
+    return false;
   }
-
-  function trail(x, y) {
-    if (lastPt && Math.hypot(x - lastPt.x, y - lastPt.y) < pitch * 8) {
-      var dx = x - lastPt.x, dy = y - lastPt.y;
-      var steps = Math.min(40, Math.ceil(Math.hypot(dx, dy) / (pitch * 0.4)));
-      for (var s = 1; s <= steps; s++) light(lastPt.x + dx * s / steps, lastPt.y + dy * s / steps);
-    } else {
-      light(x, y);
+  function free(c, r, skipTail) { return (mode === 'game' || kind[at(c, r)] === 0) && !onSnake(c, r, skipTail); }
+  function nextCell(h, d) { return { c: wrapC(h.c + d.x), r: wrapR(h.r + d.y) }; }
+  function coveredByPanel(c, r) {
+    var x = ox + c * pitch, y = oy + r * pitch, els = document.querySelectorAll('.panel, .hud');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].hidden) continue;
+      var b = els[i].getBoundingClientRect();
+      if (x + size > b.left - 4 && x < b.right + 4 && y + size > b.top - 4 && y < b.bottom + 4) return true;
     }
-    lastPt = { x: x, y: y };
+    return false;
   }
-
+  function resetSnake() {
+    snake = []; dir = { x: 1, y: 0 }; queue = [];
+    for (var tries = 0; tries < 120; tries++) {
+      var r = r0 + Math.floor(Math.random() * (r1 - r0 + 1));
+      var c = c0 + SNAKE_LEN + Math.floor(Math.random() * Math.max(1, c1 - c0 - SNAKE_LEN * 2));
+      var ok = true;
+      for (var j = 0; j < SNAKE_LEN; j++) if (c - j < c0 || kind[at(c - j, r)] !== 0) { ok = false; break; }
+      if (!ok) continue;
+      for (var s = 0; s < SNAKE_LEN; s++) snake.push({ c: c - s, r: r });
+      return;
+    }
+  }
+  function spawnFood() {
+    for (var tries = 0; tries < 300; tries++) {
+      var c = c0 + Math.floor(Math.random() * (c1 - c0 + 1)), r = r0 + Math.floor(Math.random() * (r1 - r0 + 1));
+      if (free(c, r, false) && !coveredByPanel(c, r)) { food = { c: c, r: r }; return; }
+    }
+    food = null;
+  }
   function addRipple(c, r, amp, t) {
     ripples.push({ c: c, r: r, t: t, amp: amp });
-    if (ripples.length > 12) ripples.shift();
+    if (ripples.length > 14) ripples.shift();
   }
 
-  function easeOutBack(x) {
-    var c1 = 1.70158, c3 = c1 + 1;
-    return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+  // ---------- snake brains ----------
+  var DIRS = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
+  function exits(cell) {
+    var n = 0;
+    for (var i = 0; i < 4; i++) { var q = nextCell(cell, DIRS[i]); if (free(q.c, q.r, true)) n++; }
+    return n;
+  }
+  function moveTo(cell, grow) {
+    snake.unshift(cell);
+    if (!grow) snake.pop();
+  }
+  function ambientStep(t) {
+    if (!snake.length) { resetSnake(); return; }
+    var head = snake[0];
+    if (!seek && t >= nextSeek) {
+      var bc = Roc + 3 * RS, br = Ror;
+      var cands = [{ c: bc + RS, r: br }, { c: bc, r: br - 1 }, { c: bc + 1, r: br - 1 }];
+      for (var k = 0; k < cands.length; k++) {
+        var q = cands[k];
+        if (q.c >= c0 && q.c <= c1 && q.r >= r0 && q.r <= r1 && kind[at(q.c, q.r)] === 0) { seek = q; seekUntil = t + 18; break; }
+      }
+      if (!seek) nextSeek = t + 15;
+    }
+    var opts = [];
+    for (var i = 0; i < 4; i++) {
+      var d = DIRS[i];
+      if (d.x === -dir.x && d.y === -dir.y) continue;
+      var n = nextCell(head, d);
+      if (!free(n.c, n.r, true)) continue;
+      opts.push({ d: d, n: n, ex: exits(n) });
+    }
+    if (!opts.length) { resetSnake(); return; }
+    var good = opts.filter(function (o) { return o.ex > 0; });
+    if (good.length) opts = good;
+    var choice;
+    if (seek) {
+      opts.sort(function (a, b) {
+        return (Math.abs(a.n.c - seek.c) + Math.abs(a.n.r - seek.r)) - (Math.abs(b.n.c - seek.c) + Math.abs(b.n.r - seek.r)) || Math.random() - 0.5;
+      });
+      choice = opts[0];
+    } else {
+      var straight = opts.filter(function (o) { return o.d === dir || (o.d.x === dir.x && o.d.y === dir.y); })[0];
+      choice = straight && Math.random() < 0.84 ? straight : opts[Math.floor(Math.random() * opts.length)];
+    }
+    dir = choice.d;
+    moveTo(choice.n, false);
+    if (seek && choice.n.c === seek.c && choice.n.r === seek.r) {
+      addRipple(litC, litR, 1.1, t);
+      litGoneUntil = t + 1.6; litBackAt = t + 1.6;
+      seek = null; nextSeek = t + 12 + Math.random() * 8;
+    } else if (seek && t > seekUntil) {
+      seek = null; nextSeek = t + 10;
+    }
+  }
+  function gameStep(t) {
+    while (queue.length) {
+      var nd = queue.shift();
+      if (!(nd.x === -dir.x && nd.y === -dir.y) && !(nd.x === dir.x && nd.y === dir.y)) { dir = nd; break; }
+    }
+    var head = snake[0], n = nextCell(head, dir);
+    var eat = food && n.c === food.c && n.r === food.r;
+    if (onSnake(n.c, n.r, !eat)) { die(t); return; }
+    moveTo(n, eat);
+    if (eat) {
+      score++;
+      addRipple(food.c, food.r, 0.8, t);
+      step = Math.max(GAME_STEP_MIN, step - 0.004);
+      spawnFood();
+      showHud();
+    }
   }
 
+  // ---------- game flow ----------
+  function showHud(over) {
+    clearTimeout(hudTimer);
+    hud.hidden = false;
+    hudMain.textContent = over ? 'GAME OVER ' + pad4(score) : 'SCORE ' + pad4(score);
+    hudSub.textContent = 'BEST ' + pad4(best) + (over ? '' : (touch ? ' · TAP TO QUIT' : ' · ESC TO QUIT'));
+  }
+  function startGame(d) {
+    if (mode === 'dying') return;
+    if (mode === 'game') { if (queue.length < 3) queue.push(d); return; }
+    if (!snake.length) resetSnake();
+    if (!snake.length) return;
+    mode = 'game'; rVisTarget = 0; score = 0; step = GAME_STEP; acc = 0; queue = []; seek = null;
+    if (!(d.x === -dir.x && d.y === -dir.y)) dir = d;
+    spawnFood();
+    showHud();
+  }
+  function die(t) {
+    mode = 'dying'; dieAt = t;
+    var h = snake[0]; addRipple(h.c, h.r, 1.3, t);
+    if (score > best) { best = score; try { localStorage.setItem('rl-snake-best', String(best)); } catch (e) {} }
+    showHud(true);
+  }
+  function endGame(immediate) {
+    mode = 'ambient'; lcdTarget = 0; rVisTarget = 1; food = null; queue = []; acc = 0;
+    resetSnake();
+    if (immediate) { clearTimeout(hudTimer); hud.hidden = true; }
+    else { hudTimer = setTimeout(function () { hud.hidden = true; }, 1600); }
+    nextSeek = clock() + 6;
+  }
+
+  // ---------- drawing ----------
   function rrect(x, y, w, h, rad) {
     ctx.beginPath();
-    if (ctx.roundRect) { ctx.roundRect(x, y, w, h, rad); }
+    if (ctx.roundRect) ctx.roundRect(x, y, w, h, rad);
     else {
       ctx.moveTo(x + rad, y); ctx.arcTo(x + w, y, x + w, y + h, rad); ctx.arcTo(x + w, y + h, x, y + h, rad);
       ctx.arcTo(x, y + h, x, y, rad); ctx.arcTo(x, y, x + w, y, rad); ctx.closePath();
     }
     ctx.fill();
   }
+  function easeOutBack(x) { var c1b = 1.70158, c3 = c1b + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1b * Math.pow(x - 1, 2); }
 
-  function mix(a, b, t) {
-    return 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * t) + ',' + Math.round(a[1] + (b[1] - a[1]) * t) + ',' + Math.round(a[2] + (b[2] - a[2]) * t) + ')';
-  }
+  function frame(nowMs) {
+    var t = (nowMs - start) / 1000, dt = Math.min(0.05, (nowMs - last) / 1000);
+    last = nowMs;
+    lcd += (lcdTarget - lcd) * Math.min(1, dt * 5);
+    if (Math.abs(lcd - lcdTarget) < 0.002) lcd = lcdTarget;
+    rVis += (rVisTarget - rVis) * Math.min(1, dt * (rVisTarget > rVis ? 4 : 7));
+    if (Math.abs(rVis - rVisTarget) < 0.002) rVis = rVisTarget;
 
-  function frame(now) {
-    var t = (now - start) / 1000;
-    var dt = Math.min(0.05, (now - last) / 1000);
-    last = now;
-
-    if (!reduce && t >= nextAmbient) { addRipple(litC, litR, 0.55, t); nextAmbient = t + AMBIENT_EVERY; }
+    if (!reduce && mode === 'ambient' && t >= nextAmbient) { addRipple(litC, litR, 0.55, t); nextAmbient = t + AMBIENT_EVERY; }
     ripples = ripples.filter(function (rp) { return t - rp.t < RIPPLE_LIFE; });
 
+    var stepping = mode === 'game' || (mode === 'ambient' && !reduce && t > 2.4);
+    if (stepping) {
+      acc += dt;
+      var iv = mode === 'game' ? step : AMBIENT_STEP;
+      while (acc >= iv && (mode === 'game' || mode === 'ambient')) {
+        acc -= iv;
+        if (mode === 'game') gameStep(t); else ambientStep(t);
+      }
+    }
+    if (mode === 'dying' && t - dieAt > 1.3) { endGame(false); resetSnake(); }
+
+    var bg = pick(C.bg), tile = pick(C.tile), glow = pick(C.glow), logo = pick(C.logo), litCol = pick(C.lit);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#12161F';
+    ctx.fillStyle = rgb(bg);
     ctx.fillRect(0, 0, W, H);
 
-    var rad = size * 0.22, decay = dt / HOVER_FADE;
+    var round = 1 - 0.75 * lcd, rad = size * 0.22 * round, decay = dt / HOVER_FADE, tileStr = rgb(tile);
+    var block = RS * pitch - gap;
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < cols; c++) {
         var i = r * cols + c, x = ox + c * pitch, y = oy + r * pitch;
-        if (kind[i] === 0) {
+        if (kind[i] === 0 || rVis < 0.999) {
           var v = heat[i];
           if (v > 0) heat[i] = Math.max(0, v - decay);
           var w = 0;
           for (var j = 0; j < ripples.length; j++) {
             var rp = ripples[j], age = t - rp.t;
-            var d = Math.hypot(c - rp.c, r - rp.r) - age * RIPPLE_SPEED;
-            w += rp.amp * (1 - age / RIPPLE_LIFE) * Math.exp(-(d * d) / (2 * RIPPLE_WIDTH * RIPPLE_WIDTH));
+            var dd = Math.hypot(c - rp.c, r - rp.r) - age * RIPPLE_SPEED;
+            w += rp.amp * (1 - age / RIPPLE_LIFE) * Math.exp(-(dd * dd) / (2 * RIPPLE_WIDTH * RIPPLE_WIDTH));
           }
           var a = Math.min(1, Math.max(v, 0) + w * 0.75);
-          ctx.fillStyle = a > 0.003 ? mix(BASE, MINT, a) : 'rgb(27,32,45)';
+          ctx.fillStyle = a > 0.003 ? rgb(blend(tile, glow, a)) : tileStr;
           rrect(x, y, size, size, rad);
-        } else {
+        }
+      }
+    }
+    // second pass: the logo's big pixels always sit on top of the field
+    for (var lr2 = 0; lr2 < 7 && rVis > 0.01; lr2++) {
+      for (var lc2 = 0; lc2 < 5; lc2++) {
+        if (R[lr2][lc2] === '.') continue;
+        var r = Ror + lr2 * RS, c = Roc + lc2 * RS, i = r * cols + c, x = ox + c * pitch, y = oy + r * pitch;
+        {
           var p = reduce ? 1 : Math.min(1, Math.max(0, (t - 0.25 - kidx[i] * 0.055) / 0.45));
           if (p <= 0) continue;
-          var s = reduce ? 1 : easeOutBack(p);
+          var s = (reduce ? 1 : easeOutBack(p)) * (rVisTarget > 0 ? easeOutBack(rVis) : rVis);
           if (kind[i] === 2) {
-            if (!reduce && t > 2 && Math.floor((t - 2) / 0.55) % 2 === 1) continue;
-            ctx.fillStyle = mix(MINT, MINT, 0);
+            if (t < litGoneUntil) continue;
+            if (t - litBackAt < 0.45) s *= easeOutBack(Math.max(0.01, (t - litBackAt) / 0.45));
+            if (!reduce && mode === 'ambient' && t > 2 && Math.floor((t - 2) / 0.55) % 2 === 1) continue;
+            ctx.fillStyle = rgb(litCol);
           } else {
-            ctx.fillStyle = mix(FG, FG, 0);
+            ctx.fillStyle = rgb(logo);
           }
-          var sz = size * s, off = (size - sz) / 2;
-          ctx.globalAlpha = Math.min(1, p * 2);
-          rrect(x + off, y + off, sz, sz, rad * s);
+          var sz = block * s, off = (block - sz) / 2;
+          ctx.globalAlpha = Math.min(1, p * 2) * Math.min(1, rVis * 1.5);
+          rrect(x + off, y + off, sz, sz, block * 0.2 * round * s);
           ctx.globalAlpha = 1;
         }
       }
     }
+
+    if (food) {
+      var fc = pick(C.food), fs = size * (0.62 + (1 - lcd) * 0.08 * Math.sin(t * 6));
+      ctx.fillStyle = rgb(fc);
+      rrect(ox + food.c * pitch + (size - fs) / 2, oy + food.r * pitch + (size - fs) / 2, fs, fs, fs * 0.25 * round);
+    }
+
+    var showSnake = snake.length && (mode !== 'ambient' || (!reduce && t > 2.4));
+    if (showSnake && !(mode === 'dying' && Math.floor((t - dieAt) / 0.15) % 2 === 1)) {
+      var sc = pick(C.snake), n = snake.length, bridge = size * 0.62, inset = (size - bridge) / 2;
+      for (var q = n - 1; q >= 0; q--) {
+        var seg = snake[q], sx = ox + seg.c * pitch, sy = oy + seg.r * pitch;
+        ctx.globalAlpha = 1 - 0.55 * (q / Math.max(1, n - 1)) * (1 - lcd);
+        ctx.fillStyle = q === 0 ? rgb(blend(sc, [255, 255, 255], 0.25 * (1 - lcd))) : rgb(sc);
+        rrect(sx, sy, size, size, rad);
+        if (q > 0) {
+          var prev = snake[q - 1], dc = prev.c - seg.c, dr = prev.r - seg.r;
+          if (Math.abs(dc) + Math.abs(dr) === 1) {
+            if (dc !== 0) ctx.fillRect(Math.min(sx, sx + dc * pitch) + size, sy + inset, gap, bridge);
+            else ctx.fillRect(sx + inset, Math.min(sy, sy + dr * pitch) + size, bridge, gap);
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
     requestAnimationFrame(frame);
   }
 
-  window.addEventListener('pointermove', function (e) {
-    if (e.pointerType === 'mouse' || e.buttons) trail(e.clientX, e.clientY);
-  }, { passive: true });
-  window.addEventListener('pointerleave', function () { lastPt = null; });
+  // ---------- input ----------
+  function light(x, y) { var i = cellAt(x, y); if (i >= 0 && (kind[i] === 0 || mode === 'game')) heat[i] = 1; }
+  function trail(x, y) {
+    if (lastPt && Math.hypot(x - lastPt.x, y - lastPt.y) < pitch * 8) {
+      var dx = x - lastPt.x, dy = y - lastPt.y, steps = Math.min(40, Math.ceil(Math.hypot(dx, dy) / (pitch * 0.4)));
+      for (var s = 1; s <= steps; s++) light(lastPt.x + dx * s / steps, lastPt.y + dy * s / steps);
+    } else light(x, y);
+    lastPt = { x: x, y: y };
+  }
+  window.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse') trail(e.clientX, e.clientY); }, { passive: true });
   document.addEventListener('mouseleave', function () { lastPt = null; });
   window.addEventListener('pointerdown', function (e) {
-    if (e.target.closest && e.target.closest('a')) return;
+    if (e.target.closest && e.target.closest('a, button')) return;
     var i = cellAt(e.clientX, e.clientY);
     if (i < 0) return;
-    var t = (performance.now() - start) / 1000;
-    addRipple(i % cols, Math.floor(i / cols), 1, t);
+    addRipple(i % cols, Math.floor(i / cols), 1, clock());
     if (kind[i] === 0) heat[i] = 1;
     lastPt = { x: e.clientX, y: e.clientY };
   }, { passive: true });
-  window.addEventListener('pointerup', function (e) { if (e.pointerType !== 'mouse') lastPt = null; });
+
+  var KEYS = {
+    ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 },
+    w: { x: 0, y: -1 }, s: { x: 0, y: 1 }, a: { x: -1, y: 0 }, d: { x: 1, y: 0 },
+    W: { x: 0, y: -1 }, S: { x: 0, y: 1 }, A: { x: -1, y: 0 }, D: { x: 1, y: 0 }
+  };
+  window.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var el = document.activeElement;
+    if (el && el !== document.body && el !== cv && el !== hud) return;
+    if (e.key === 'Escape') { if (mode === 'game') endGame(false); return; }
+    var d = KEYS[e.key];
+    if (!d) return;
+    e.preventDefault();
+    startGame(d);
+  });
+  hud.addEventListener('click', function () { if (mode === 'game') endGame(false); });
+
+  var touchStart = null;
+  window.addEventListener('touchstart', function (e) {
+    if (e.target.closest && e.target.closest('a, button')) return;
+    var p = e.touches[0]; touchStart = { x: p.clientX, y: p.clientY };
+  }, { passive: true });
+  window.addEventListener('touchend', function (e) {
+    if (!touchStart) return;
+    var p = e.changedTouches[0], dx = p.clientX - touchStart.x, dy = p.clientY - touchStart.y;
+    touchStart = null;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 28) return;
+    startGame(Math.abs(dx) > Math.abs(dy) ? { x: dx > 0 ? 1 : -1, y: 0 } : { x: 0, y: dy > 0 ? 1 : -1 });
+  }, { passive: true });
 
   var rt;
   window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(layout, 120); });
