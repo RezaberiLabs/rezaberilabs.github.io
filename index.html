@@ -130,8 +130,32 @@ a{color:inherit}
         else if (ch === 'L') { kind[i] = 2; kidx[i] = 18; }
       }
     }
+    buildSprites();
     if (mode !== 'ambient') endGame(true);
     resetSnake();
+  }
+
+  // Pre-rendered tile bitmaps: sprites[0] is the idle tile, sprites[LEVELS] is full mint.
+  // baseCv holds the whole idle field, so each frame starts with one drawImage and then only
+  // redraws the tiles that are currently glowing.
+  var LEVELS = 32, INV_2W2 = 1 / (2 * RIPPLE_WIDTH * RIPPLE_WIDTH), sprites = [], baseCv = document.createElement('canvas');
+  function buildSprites() {
+    var px = Math.round(size * dpr), rad = size * 0.22 * dpr, tile = C.tile[0], glow = C.glow[0];
+    sprites = [];
+    for (var l = 0; l <= LEVELS; l++) {
+      var s = document.createElement('canvas'); s.width = s.height = px;
+      var g = s.getContext('2d');
+      g.fillStyle = rgb(blend(tile, glow, l / LEVELS));
+      g.beginPath();
+      if (g.roundRect) g.roundRect(0, 0, px, px, rad); else g.rect(0, 0, px, px);
+      g.fill();
+      sprites.push(s);
+    }
+    baseCv.width = cv.width; baseCv.height = cv.height;
+    var b = baseCv.getContext('2d');
+    b.fillStyle = rgb(C.bg[0]); b.fillRect(0, 0, baseCv.width, baseCv.height);
+    b.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (var r = 0; r < rows; r++) for (var c = 0; c < cols; c++) b.drawImage(sprites[0], ox + c * pitch, oy + r * pitch, size, size);
   }
 
   // ---------- helpers ----------
@@ -179,7 +203,7 @@ a{color:inherit}
   }
   function addRipple(c, r, amp, t) {
     ripples.push({ c: c, r: r, t: t, amp: amp });
-    if (ripples.length > 14) ripples.shift();
+    if (ripples.length > 5) ripples.shift();   // at most 5 rings at once keeps the busiest frames cheap
   }
 
   // ---------- snake brains ----------
@@ -370,31 +394,39 @@ a{color:inherit}
     }
     if (mode === 'dying' && t - dieAt > 1.3) { endGame(false); resetSnake(); }
 
-    var bg = pick(C.bg), tile = pick(C.tile), glow = pick(C.glow), logo = pick(C.logo), litCol = pick(C.lit);
+    // 1. the quiet field is a cached bitmap: one blit instead of ~1,500 tile draws
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(baseCv, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = rgb(bg);
-    ctx.fillRect(0, 0, W, H);
 
-    var round = 1 - 0.75 * lcd, rad = size * 0.22 * round, decay = dt / HOVER_FADE, tileStr = rgb(tile);
-    var block = RS * pitch - gap;
+    // 2. only tiles that are lit by hover or inside a ripple ring get redrawn, from pre-rendered sprites
+    var rps = [];
+    for (var j = 0; j < ripples.length; j++) {
+      var rp0 = ripples[j], age = t - rp0.t, rr = age * RIPPLE_SPEED, band = RIPPLE_WIDTH * 2.6;
+      var inner = Math.max(0, rr - band), outer = rr + band;
+      rps.push({ c: rp0.c, r: rp0.r, rr: rr, k: rp0.amp * (1 - age / RIPPLE_LIFE) * 0.75, in2: inner * inner, out2: outer * outer });
+    }
+    var decay = dt / HOVER_FADE, skipR = rVis >= 0.999, nr = rps.length;
     for (var r = 0; r < rows; r++) {
       for (var c = 0; c < cols; c++) {
-        var i = r * cols + c, x = ox + c * pitch, y = oy + r * pitch;
-        if (kind[i] === 0 || rVis < 0.999) {
-          var v = heat[i];
-          if (v > 0) heat[i] = Math.max(0, v - decay);
-          var w = 0;
-          for (var j = 0; j < ripples.length; j++) {
-            var rp = ripples[j], age = t - rp.t;
-            var dd = Math.hypot(c - rp.c, r - rp.r) - age * RIPPLE_SPEED;
-            w += rp.amp * (1 - age / RIPPLE_LIFE) * Math.exp(-(dd * dd) / (2 * RIPPLE_WIDTH * RIPPLE_WIDTH));
-          }
-          var a = Math.min(1, Math.max(v, 0) + w * 0.75);
-          ctx.fillStyle = a > 0.003 ? rgb(blend(tile, glow, a)) : tileStr;
-          rrect(x, y, size, size, rad);
+        var i = r * cols + c;
+        if (skipR && kind[i] !== 0) continue;
+        var v = heat[i];
+        if (v > 0) { v = Math.max(0, v - decay); heat[i] = v; }
+        var w = 0;
+        for (var q = 0; q < nr; q++) {
+          var rp = rps[q], dx = c - rp.c, dy = r - rp.r, d2 = dx * dx + dy * dy;
+          if (d2 < rp.in2 || d2 > rp.out2) continue;
+          var dd = Math.sqrt(d2) - rp.rr;
+          w += rp.k * Math.exp(-dd * dd * INV_2W2);
         }
+        var a = v + w;
+        if (a < 0.03) continue;
+        var lvl = Math.round(Math.min(1, a) * LEVELS);
+        if (lvl > 0) ctx.drawImage(sprites[lvl], ox + c * pitch, oy + r * pitch, size, size);
       }
     }
+    var round = 1, block = RS * pitch - gap, litCol = pick(C.lit), logo = pick(C.logo);
     // second pass: the logo's big pixels always sit on top of the field
     for (var lr2 = 0; lr2 < 7 && rVis > 0.01; lr2++) {
       for (var lc2 = 0; lc2 < 5; lc2++) {
