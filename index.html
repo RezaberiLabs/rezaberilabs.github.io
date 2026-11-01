@@ -34,6 +34,9 @@ a{color:inherit}
 .hud{pointer-events:auto;cursor:pointer;background:var(--ink);color:var(--mint);border:0;border-radius:12px;padding:10px 14px;font:700 15px/1.2 'JetBrains Mono',ui-monospace,monospace;letter-spacing:.14em;display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-height:44px}
 .hud[hidden],.hint[hidden]{display:none}
 .hint{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 14px}
+.hint [hidden]{display:none}
+.arrows{display:inline-flex;gap:3px;vertical-align:-2px;margin:0 2px}
+.arrows svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .hud small{font-weight:500;font-size:11px;letter-spacing:.1em;color:var(--muted)}
 .fade{animation:fade .9s ease-out 1.6s both}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -44,7 +47,7 @@ a{color:inherit}
 <canvas id="field" aria-hidden="true"></canvas>
 <header class="top fade">
 <h1 class="word panel">Rezaberi <span>Labs</span></h1>
-<div class="hint panel" id="hint"></div>
+<div class="hint panel" id="hint"><span id="hint-desk">Press WASD or <span class="arrows" aria-label="arrow keys"><svg viewBox="0 0 12 12" aria-hidden="true"><g transform="rotate(270 6 6)"><path d="M6 10.5V1.8M2.4 5.4 6 1.8l3.6 3.6"/></g></svg><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10.5V1.8M2.4 5.4 6 1.8l3.6 3.6"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><g transform="rotate(90 6 6)"><path d="M6 10.5V1.8M2.4 5.4 6 1.8l3.6 3.6"/></g></svg><svg viewBox="0 0 12 12" aria-hidden="true"><g transform="rotate(180 6 6)"><path d="M6 10.5V1.8M2.4 5.4 6 1.8l3.6 3.6"/></g></svg></span> to play</span><span id="hint-touch" hidden>Swipe to play</span></div>
 <button class="hud" id="hud" type="button" hidden aria-live="polite"><span id="hud-main">SCORE 0000</span><small id="hud-sub">BEST 0000</small></button>
 </header>
 <footer class="bottom fade">
@@ -81,7 +84,7 @@ a{color:inherit}
   var RS = 2;                 // each logo pixel spans RS x RS tiles
   var RIPPLE_SPEED = 24, RIPPLE_WIDTH = 2.2, RIPPLE_LIFE = 2.8, AMBIENT_EVERY = 5, HOVER_FADE = 1.1;
   var AMBIENT_STEP = 0.13, GAME_STEP = 0.095, GAME_STEP_MIN = 0.055, SNAKE_LEN = 6;
-  var oldTail = null, alpha = 1;   // last tail cell + progress between ticks, used to glide the snake
+  var oldTail = null, alpha = 1, moved = { x: 1, y: 0 };   // moved = direction of the last actual step   // last tail cell + progress between ticks, used to glide the snake
 
   var W, H, dpr, size, gap, pitch, cols, rows, ox, oy, Roc, Ror, litC, litR, kind, kidx, heat, c0, c1, r0, r1;
   var ripples = [], start = performance.now(), last = start, nextAmbient = 1.8, lastPt = null;
@@ -156,7 +159,7 @@ a{color:inherit}
     return false;
   }
   function resetSnake() {
-    snake = []; dir = { x: 1, y: 0 }; queue = []; oldTail = null;
+    snake = []; dir = { x: 1, y: 0 }; moved = dir; queue = []; oldTail = null;
     for (var tries = 0; tries < 120; tries++) {
       var r = r0 + Math.floor(Math.random() * (r1 - r0 + 1));
       var c = c0 + SNAKE_LEN + Math.floor(Math.random() * Math.max(1, c1 - c0 - SNAKE_LEN * 2));
@@ -189,6 +192,7 @@ a{color:inherit}
   function moveTo(cell, grow) {
     snake.unshift(cell);
     oldTail = grow ? null : snake.pop();
+    moved = dir;
   }
   function ambientStep(t) {
     if (!snake.length) { resetSnake(); return; }
@@ -234,9 +238,9 @@ a{color:inherit}
     }
   }
   function gameStep(t) {
-    while (queue.length) {
+    while (queue.length && dir.x === moved.x && dir.y === moved.y) {   // one turn per step
       var nd = queue.shift();
-      if (!(nd.x === -dir.x && nd.y === -dir.y) && !(nd.x === dir.x && nd.y === dir.y)) { dir = nd; break; }
+      if (!(nd.x === -moved.x && nd.y === -moved.y) && !(nd.x === dir.x && nd.y === dir.y)) { dir = nd; break; }
     }
     var head = snake[0], n = nextCell(head, dir);
     var eat = food && n.c === food.c && n.r === food.r;
@@ -264,7 +268,7 @@ a{color:inherit}
     if (!snake.length) resetSnake();
     if (!snake.length) return;
     mode = 'game'; rVisTarget = 0; score = 0; step = GAME_STEP; acc = 0; queue = []; seek = null;
-    if (!(d.x === -dir.x && d.y === -dir.y)) dir = d;
+    if (!(d.x === -moved.x && d.y === -moved.y)) dir = d;
     spawnFood();
     showHud();
   }
@@ -482,7 +486,8 @@ a{color:inherit}
   window.addEventListener('touchend', function () { swipe = null; }, { passive: true });
   window.addEventListener('touchcancel', function () { swipe = null; }, { passive: true });
 
-  hint.textContent = touch ? 'Swipe to play' : 'Press WASD or ← ↑ → ↓ to play';
+  document.getElementById('hint-desk').hidden = touch;
+  document.getElementById('hint-touch').hidden = !touch;
 
   var rt;
   window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(layout, 120); });
