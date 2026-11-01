@@ -1,4 +1,104 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rezaberi Labs</title>
-<style>:root{--ink:#15181b;--muted:#555c63;--bg:#fff;--accent:#c62828}@media (prefers-color-scheme:dark){:root{--ink:#f2f4f1;--muted:#a3abb2;--bg:#0b0d0e;--accent:#ff6b6b}}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.55 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}main{max-width:680px;margin:0 auto;padding:48px 16px}h1{font-size:32px;margin:0 0 16px}a{color:var(--accent)}</style></head>
-<body><main><h1>Rezaberi Labs</h1><p><strong>Poke Lab</strong>: <a href="pokelab/support.html">Support</a> · <a href="pokelab/privacy.html">Privacy Policy</a></p><p>Contact: <a href="mailto:support@rezaberi.com">support@rezaberi.com</a></p></main></body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rezaberi Labs</title>
+<meta name="description" content="Rezaberi Labs LLC. Thoughtful solutions, happier people.">
+<meta name="theme-color" content="#12161F">
+<meta property="og:title" content="Rezaberi Labs">
+<meta property="og:description" content="Thoughtful solutions, happier people.">
+<meta property="og:url" content="https://rezaberi.com">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2312161F'/%3E%3Cg transform='translate(14 9) scale(.82)' fill='%23F2F4F7'%3E%3Crect x='17.5' y='4' width='13.5' height='13.5'/%3E%3Crect x='31' y='4' width='13.5' height='13.5'/%3E%3Crect x='44.5' y='4' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='17.5' width='13.5' height='13.5'/%3E%3Crect x='71.5' y='17.5' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='31' width='13.5' height='13.5'/%3E%3Crect x='71.5' y='31' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='44.5' width='13.5' height='13.5'/%3E%3Crect x='31' y='44.5' width='13.5' height='13.5'/%3E%3Crect x='44.5' y='44.5' width='13.5' height='13.5'/%3E%3Crect x='58' y='44.5' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='58' width='13.5' height='13.5'/%3E%3Crect x='44.5' y='58' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='71.5' width='13.5' height='13.5'/%3E%3Crect x='58' y='71.5' width='13.5' height='13.5'/%3E%3Crect x='17.5' y='85' width='13.5' height='13.5'/%3E%3Crect x='71.5' y='85' width='13.5' height='13.5'/%3E%3Crect x='58' y='4' width='13.5' height='13.5' fill='%2319D3A2'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#12161F;--cell:#1B202D;--mint:#19D3A2;--fg:#F2F4F7;--muted:#ACB7CD}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink)}
+body{position:relative;min-height:100vh;min-height:100dvh;overflow:hidden;color:var(--fg);font-family:'JetBrains Mono',ui-monospace,monospace;font-size:14px;display:flex;flex-direction:column;justify-content:space-between;gap:24px;padding:24px}
+@media (max-width:600px){body{padding:16px}}
+a{color:inherit}
+.field{position:fixed;inset:0;z-index:0;overflow:hidden}
+.grid{position:absolute;display:grid}
+.top,.bottom{position:relative;z-index:1;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;pointer-events:none}
+.top{align-items:flex-start}
+.panel{pointer-events:auto;background:var(--ink);border-radius:12px;padding:10px 14px}
+.word{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-size:20px;letter-spacing:-.01em;font-weight:800;margin:0}
+.word span{font-weight:500}
+.tag{letter-spacing:.08em;text-transform:uppercase;font-size:13px;color:var(--muted)}
+.about{display:flex;flex-direction:column;gap:4px}
+.about p{margin:0;font-size:16px;line-height:1.45}
+.about small{font-size:13px;color:var(--muted)}
+.mail{display:inline-block;font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:800;font-size:clamp(22px,2.6vw,32px);letter-spacing:-.02em;text-decoration:underline;text-decoration-color:var(--mint);text-decoration-thickness:3px;text-underline-offset:6px}
+.mail:hover,.mail:focus-visible{text-decoration-color:#fff}
+.cell{position:relative;border-radius:22%;background:var(--cell);transition:background 1.6s ease-out}
+.cell::after{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--mint);opacity:0;animation:wave 5s ease-out infinite;animation-delay:calc(1.8s + var(--d))}
+@keyframes wave{0%{opacity:0}5%{opacity:.5}22%{opacity:0}100%{opacity:0}}
+@media (hover:hover){.cell.bg:hover{background:var(--mint);transition:none}}
+.cell.r{background:var(--fg);animation:pop .45s cubic-bezier(.3,1.5,.5,1) both;animation-delay:calc(.25s + var(--k) * 55ms)}
+.cell.lit{background:var(--mint);animation:pop .45s cubic-bezier(.3,1.5,.5,1) both,blink 1.1s steps(1,end) infinite;animation-delay:calc(.25s + var(--k) * 55ms),2s}
+.cell.r::after,.cell.lit::after{display:none}
+@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:scale(1)}}
+@keyframes blink{0%{opacity:1}50%{opacity:0}}
+.fade{animation:fade .9s ease-out 1.6s both}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.cell::after{animation:none}.cell.r,.cell.lit,.fade{animation:none}}
+</style>
+</head>
+<body>
+<div class="field" aria-hidden="true"><div class="grid" id="grid"></div></div>
+<header class="top fade">
+<h1 class="word panel">Rezaberi <span>Labs</span></h1></header>
+<footer class="bottom fade">
+<div class="about panel">
+<p>Thoughtful solutions, happier people.</p>
+<small>© <span id="yr">2026</span> Rezaberi Labs LLC</small>
+</div>
+<div class="panel"><a class="mail" href="mailto:hello@rezaberi.com">hello@rezaberi.com</a></div>
+</footer>
+<script>
+(function () {
+  var R = ['XXXL.', 'X...X', 'X...X', 'XXXX.', 'X.X..', 'X..X.', 'X...X'];
+  var grid = document.getElementById('grid'), lastKey = '';
+  function build() {
+    var W = window.innerWidth, H = window.innerHeight;
+    var p = Math.max(26, Math.min(64, W / 24));
+    var size = Math.round(p * 0.86), gap = Math.round(p) - size, pitch = size + gap;
+    var cols = Math.ceil(W / pitch) + 1, rows = Math.ceil(H / pitch) + 1;
+    var key = cols + 'x' + rows + ':' + size;
+    if (key === lastKey) return;
+    lastKey = key;
+    var oc = Math.max(1, cols - 5 - Math.round(cols * 0.18));
+    var or = Math.max(1, Math.floor((rows - 7) / 2));
+    var litC = oc + 3, litR = or, k = 0;
+    grid.style.gridTemplateColumns = 'repeat(' + cols + ',' + size + 'px)';
+    grid.style.gridAutoRows = size + 'px';
+    grid.style.gap = gap + 'px';
+    grid.style.left = Math.round((W - (cols * pitch - gap)) / 2) + 'px';
+    grid.style.top = Math.round((H - (rows * pitch - gap)) / 2) + 'px';
+    var frag = document.createDocumentFragment();
+    for (var r = 0; r < rows; r++) {
+      for (var c = 0; c < cols; c++) {
+        var lr = r - or, lc = c - oc, ch = '.';
+        if (lr >= 0 && lr < 7 && lc >= 0 && lc < 5) ch = R[lr][lc];
+        var el = document.createElement('div'), kk = 0;
+        el.className = 'cell bg';
+        if (ch === 'X') { el.className = 'cell r'; kk = k++; }
+        if (ch === 'L') { el.className = 'cell lit'; kk = 18; }
+        el.style.setProperty('--d', (Math.hypot(c - litC, r - litR) * 0.085).toFixed(2) + 's');
+        el.style.setProperty('--k', kk);
+        frag.appendChild(el);
+      }
+    }
+    grid.replaceChildren(frag);
+  }
+  var t;
+  window.addEventListener('resize', function () { clearTimeout(t); t = setTimeout(build, 150); });
+  build();
+  document.getElementById('yr').textContent = new Date().getFullYear();
+})();
+</script>
+</body>
+</html>
