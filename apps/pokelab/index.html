@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poke Lab</title>
+<meta name="description" content="Poke Lab is a team builder for VGC doubles on iPhone: browse what's legal, build and test your team, and battle on Showdown.">
+<meta property="og:title" content="Poke Lab">
+<meta property="og:description" content="Build, test and battle VGC doubles teams on iPhone.">
+<meta property="og:image" content="https://rezaberi.com/apps/pokelab/media/battle-poster.jpg">
+<meta property="og:url" content="https://rezaberi.com/apps/pokelab/">
+<link rel="canonical" href="https://rezaberi.com/apps/pokelab/">
+<style>
+  :root {
+    --bg: #f4f6f9; --surface: #ffffff; --ink: #15181b; --muted: #555c63; --hairline: #dde3ea;
+    --shell: #d32f2f; --shell-deep: #9f1d1d; --seam: #1d1f22; --lens: #1a5fb4; --on-shell: #ffffff;
+    --bezel: #1b1d20;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0c1117; --surface: #161d26; --ink: #eef1f4; --muted: #a3abb2; --hairline: #252f3b;
+            --shell: #b72525; --shell-deep: #7a1414; --lens: #6ea8ff; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif; }
+  a { color: var(--lens); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+  /* The device body: glossy red with the lid seam, as in the app */
+  .shell { position: relative; color: var(--on-shell); overflow: hidden;
+           background: linear-gradient(160deg, var(--shell), var(--shell-deep)); }
+  .shell::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+                   background: radial-gradient(120% 60% at 20% 0%, rgba(255,255,255,.28), rgba(255,255,255,0) 60%); }
+  .lid { position: relative; display: flex; align-items: center; justify-content: space-between; height: 76px; }
+  .lid::after { content: ""; position: absolute; left: -100vw; right: -100vw; bottom: 0; height: 3px; background: var(--seam);
+                box-shadow: 0 1px 0 rgba(255,255,255,.15); }
+  .brand { display: flex; align-items: center; gap: 14px; color: #fff; text-decoration: none; font-weight: 700; font-size: 19px; letter-spacing: -.01em; }
+  .lens { width: 34px; height: 34px; border-radius: 50%; flex: none;
+          background: radial-gradient(circle at 34% 30%, #d6ecff, #4a90e2 42%, #123e86);
+          box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px rgba(0,0,0,.25), 0 3px 8px rgba(0,0,0,.3); }
+  .leds { display: inline-flex; gap: 6px; } .leds i { width: 8px; height: 8px; border-radius: 50%; }
+  .lid nav { display: flex; align-items: center; gap: 22px; font-size: 15px; line-height: 1; }
+  .lid nav a { color: rgba(255,255,255,.92); text-decoration: none; }
+  .lid nav a:hover { color: #fff; text-decoration: underline; }
+
+  .hero { position: relative; display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 64px 0 72px; }
+  .eyebrow { font-size: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.85); margin: 0 0 14px; }
+  h1 { font-size: clamp(40px, 6vw, 68px); line-height: 1.02; letter-spacing: -.03em; margin: 0 0 20px; font-weight: 800; }
+  .lede { font-size: clamp(18px, 2vw, 21px); line-height: 1.5; color: rgba(255,255,255,.92); max-width: 30em; margin: 0 0 32px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 24px; border-radius: 999px;
+         font-weight: 600; font-size: 17px; text-decoration: none; }
+  .btn.primary { background: #fff; color: var(--shell-deep); }
+  .btn.ghost { color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.6); }
+  .avail { margin: 18px 0 0; font-size: 14px; color: rgba(255,255,255,.8); }
+  .soon { font-size: 14px; color: rgba(255,255,255,.8); width: 100%; margin: 4px 0 0; }
+
+  /* Device frame: Apple's official iPhone 17 Pro bezel (Apple Design Resources), used as supplied.
+     The bezel is 1350 × 2760; its screen opening is 1206 × 2622 at (72, 69), the exact size of the captures.
+     Apple's marketing guidelines: no tilt, shadows, reflections or changes to the bezel. */
+  .phone { --w: 300px; position: relative; width: var(--w); max-width: 100%; aspect-ratio: 1350 / 2760; margin: 0 auto; }
+  .phone > .bezel { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+  .phone > video, .phone > picture { position: absolute; left: 5.3333%; top: 2.5%; width: 89.3333%; height: 95%; z-index: 1;
+           border-radius: 14% / 6.5%; overflow: hidden; background: #000; }
+  .phone > video { display: block; object-fit: cover; }
+  .phone > picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .hero .phone { --w: 320px; }
+  section { padding: 96px 0; }
+  .feature { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; }
+  .feature + .feature { margin-top: 112px; }
+  .feature.flip .copy { order: 2; }
+  .kicker { font-size: 14px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--shell); margin: 0 0 10px; }
+  @media (prefers-color-scheme: dark) { .kicker { color: #ff8a80; } }
+  h2 { font-size: clamp(30px, 3.6vw, 44px); line-height: 1.1; letter-spacing: -.02em; margin: 0 0 16px; }
+  .copy p { color: var(--muted); font-size: 19px; margin: 0 0 14px; max-width: 28em; }
+  .copy ul { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  .copy li { padding-left: 18px; position: relative; color: var(--ink); }
+  .copy li::before { content: ""; position: absolute; left: 0; top: .62em; width: 7px; height: 7px; border-radius: 50%; background: var(--lens); }
+
+  .proof { background: var(--surface); border-bottom: 1px solid var(--hairline); }
+  .proof .wrap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding-top: 28px; padding-bottom: 28px; }
+  .proof div { display: flex; flex-direction: column; gap: 2px; text-align: center; }
+  .proof strong { font-size: 16px; letter-spacing: -.01em; }
+  .proof span { font-size: 14px; color: var(--muted); }
+  .closing { text-align: center; padding: 88px 0; }
+  .closing h2 { color: #fff; margin-bottom: 10px; }
+  .closing p { color: rgba(255,255,255,.9); font-size: 19px; margin: 0 0 28px; }
+  .closing .cta { justify-content: center; }
+  .more { background: var(--surface); border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+  .more h2 { text-align: center; margin-bottom: 48px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; max-width: 960px; margin: 0 auto; }
+  .grid h3 { font-size: 19px; margin: 0 0 6px; letter-spacing: -.01em; }
+  .grid p { margin: 0; color: var(--muted); font-size: 16px; }
+
+  .privacy { text-align: center; }
+  .privacy h2 { margin-bottom: 12px; }
+  .privacy p { color: var(--muted); font-size: 19px; max-width: 34em; margin: 0 auto; }
+
+  footer { padding: 40px 0 56px; border-top: 1px solid var(--hairline); color: var(--muted); font-size: 14px; }
+  footer .row { display: flex; flex-wrap: wrap; gap: 12px 28px; justify-content: space-between; align-items: center; }
+  footer nav { display: flex; gap: 20px; }
+  footer a { color: var(--muted); }
+  .legal { margin: 20px 0 0; font-size: 13px; }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: 1fr; padding: 40px 0 56px; gap: 40px; text-align: left; }
+    .hero .phone { --w: 270px; }
+    .feature, .feature.flip { grid-template-columns: 1fr; gap: 36px; }
+    .feature.flip .copy { order: 0; }
+    .feature .phone { --w: 270px; }
+    .grid { grid-template-columns: 1fr; gap: 24px; }
+    .proof .wrap { grid-template-columns: 1fr; gap: 14px; }
+    section { padding: 64px 0; }
+    .feature + .feature { margin-top: 72px; }
+    .lid nav { gap: 16px; }
+  }
+  @media (max-width: 520px) {
+    .wrap { padding: 0 16px; }
+    .grid { grid-template-columns: 1fr; gap: 24px; }
+    .proof .wrap { grid-template-columns: 1fr; gap: 14px; }
+    .leds { display: none; }
+    .btn { width: 100%; }
+  }
+
+  /* ---------- Motion and polish ---------- */
+  :root { --ease: cubic-bezier(.2,.7,.2,1); }
+  html { scroll-behavior: smooth; }
+  ::selection { background: rgba(26,95,180,.2); }
+  a:focus-visible, .btn:focus-visible { outline: 3px solid #ffd166; outline-offset: 3px; border-radius: 999px; }
+
+  /* Sticky top bar: clear over the hero, red glass once you scroll */
+  .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; transition: background .3s var(--ease), box-shadow .3s var(--ease), backdrop-filter .3s; }
+  .topbar.scrolled { background: color-mix(in srgb, var(--shell) 82%, transparent); backdrop-filter: saturate(160%) blur(14px);
+                     -webkit-backdrop-filter: saturate(160%) blur(14px); box-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  .topbar .lid::after { transition: opacity .3s; }
+  .topbar.scrolled .lid::after { opacity: 0; }
+  .topbar.scrolled .lid { height: 60px; }
+  .lid { transition: height .3s var(--ease); }
+  .lid nav a { position: relative; }
+  .lid nav a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 2px; background: #fff; border-radius: 2px;
+                      transform: scaleX(0); transform-origin: left; transition: transform .25s var(--ease); }
+  .lid nav a:hover { text-decoration: none; } .lid nav a:hover::after { transform: scaleX(1); }
+  .lid .get { padding: 6px 14px; border-radius: 999px; background: #fff; color: var(--shell-deep) !important; font-weight: 600; }
+  .lid .get::after { display: none; }
+
+  /* The red body: a slow light sweep across the gloss */
+  .shell::after { content: ""; position: absolute; inset: -20% -40%; pointer-events: none;
+                  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.10) 48%, rgba(255,255,255,.16) 50%, rgba(255,255,255,.10) 52%, transparent 60%);
+                  transform: translateX(-60%); animation: sweep 9s var(--ease) 1.2s infinite; }
+  @keyframes sweep { 0% { transform: translateX(-60%); } 45%, 100% { transform: translateX(60%); } }
+  .shell > *:not(.topbar) { position: relative; z-index: 1; }
+  header.shell { padding-top: 76px; }
+
+  /* Hero entrance: copy rises in, staggered */
+  .rise { opacity: 0; transform: translateY(18px); animation: rise .8s var(--ease) forwards; animation-delay: calc(var(--i, 0) * 90ms + 100ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+  .hero .phone { opacity: 0; animation: fadein 1s ease .45s forwards; }
+  @keyframes fadein { to { opacity: 1; } }
+
+  /* Scroll reveal for copy and cards (the device images themselves never move) */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s var(--ease), transform .7s var(--ease); transition-delay: calc(var(--i, 0) * 80ms); }
+  .reveal.in { opacity: 1; transform: none; }
+  .fade { opacity: 0; transition: opacity 1s ease; } .fade.in { opacity: 1; }
+
+  /* Feature numbering and a rule that draws in */
+  .kicker { display: flex; align-items: center; gap: 12px; }
+  .kicker .n { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+  .kicker .rule { height: 2px; width: 0; background: currentColor; border-radius: 2px; transition: width .9s var(--ease) .2s; }
+  .in .kicker .rule, .kicker.in .rule { width: 48px; }
+
+  /* Buttons and cards */
+  .btn { transition: transform .2s var(--ease), box-shadow .2s var(--ease), background .2s; }
+  .btn.primary:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0,0,0,.18); }
+  .btn.ghost:hover { background: rgba(255,255,255,.12); }
+  .grid > div { padding: 24px; border-radius: 20px; background: var(--bg); border: 1px solid var(--hairline);
+                transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s; }
+  .grid > div:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0,0,0,.08); border-color: transparent; }
+  .grid .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 14px;
+               background: color-mix(in srgb, var(--lens) 12%, transparent); color: var(--lens); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .shell::after { animation: none; display: none; }
+    .rise, .hero .phone { animation: none; opacity: 1; transform: none; }
+    .reveal, .fade { opacity: 1; transform: none; transition: none; }
+    .kicker .rule { width: 48px; transition: none; }
+  }
+
+  /* ---------- Battle story: the phone holds still, its screen plays each step as you scroll ---------- */
+  .story { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; margin-top: 112px; }
+  .story-stage { position: sticky; top: 96px; align-self: start; height: calc(100vh - 140px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
+  .story-stage .phone { --w: min(300px, calc((100vh - 200px) * .489)); }
+  .story-progress { display: flex; gap: 6px; } .story-progress i { width: 18px; height: 4px; border-radius: 2px; background: var(--hairline); transition: background .3s, width .3s var(--ease); }
+  .story-progress i.on { background: var(--lens); width: 30px; }
+  .step { min-height: 62vh; display: flex; flex-direction: column; justify-content: center; opacity: .28; transition: opacity .4s var(--ease); }
+  .step.active { opacity: 1; }
+  .step h3 { font-size: clamp(24px, 2.6vw, 32px); letter-spacing: -.02em; margin: 0 0 10px; line-height: 1.15; }
+  .step p { color: var(--muted); font-size: 19px; margin: 0; max-width: 26em; }
+  .step .step-turn { font: 600 13px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--lens); margin-bottom: 12px; }
+  .story-copy .copy { margin-bottom: 8vh; }
+
+  /* ---------- Lens that watches the cursor; LEDs that blink per section ---------- */
+  .lens { position: relative; overflow: hidden; transition: box-shadow .3s; }
+  .lens i { position: absolute; width: 11px; height: 11px; border-radius: 50%; left: 50%; top: 50%; margin: -5.5px 0 0 -5.5px;
+            background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 70%); transform: translate(var(--lx, -4px), var(--ly, -4px)); transition: transform .15s linear; }
+  .lens.flash { box-shadow: 0 0 0 3px #fff, 0 0 18px 6px rgba(110,180,255,.9); }
+  .leds i { transition: opacity .12s, filter .12s; } .leds.blink i { animation: blink .5s steps(1) 2; }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  /* ---------- Type quiz (the hidden game) ---------- */
+  .quiz-chip { position: fixed; right: 20px; bottom: 20px; z-index: 40; border: 0; cursor: pointer; padding: 10px 14px; border-radius: 12px;
+               font: 600 12px/1 ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: .06em; text-transform: uppercase;
+               color: #cfe8ff; background: rgba(13,17,23,.88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+               box-shadow: 0 6px 20px rgba(0,0,0,.25); transition: transform .2s var(--ease); }
+  .quiz-chip:hover { transform: translateY(-2px); }
+  kbd { display: inline-block; min-width: 1.6em; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,.14); font: inherit; text-align: center; }
+  .quiz { position: fixed; inset: 0; z-index: 100; color: #eef1f4; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
+          background: #0d1117 radial-gradient(60% 50% at 50% 45%, rgba(26,95,180,.25), transparent 70%);
+          font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .quiz::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+                  background: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px) 0 0 / 28px 28px, linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px) 0 0 / 28px 28px; }
+  .quiz[hidden] { display: none; }
+  .quiz > * { position: relative; }
+  .quiz-hud { position: absolute; top: 20px; left: 24px; right: 24px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+              font-size: 12px; letter-spacing: .08em; color: #8b98a8; }
+  .quiz-hud b { color: #6ee07a; font-weight: 700; }
+  .quiz-hud button { all: unset; cursor: pointer; color: #8b98a8; } .quiz-hud button:hover { color: #fff; }
+  .quiz-board, .quiz-over { width: min(560px, 100%); text-align: center; }
+  .quiz-ask { margin: 0 0 18px; color: #8b98a8; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+  .quiz-match { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 26px; }
+  .qt { min-width: 140px; padding: 16px 18px; border-radius: 14px; font: 800 22px/1 -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: .04em;
+        text-transform: uppercase; color: #fff; box-shadow: inset 0 -3px 0 rgba(0,0,0,.2); }
+  .quiz-vs { color: #8b98a8; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+  .quiz-timer { height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; margin: 0 auto 22px; width: 100%; }
+  .quiz-timer i { display: block; height: 100%; width: 100%; background: #ffd166; transform-origin: left; }
+  .quiz-answers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .quiz-answers button, .quiz-again { display: flex; align-items: center; gap: 10px; justify-content: flex-start; padding: 14px; border-radius: 14px; cursor: pointer;
+          border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: #eef1f4; font: 600 15px/1.2 -apple-system, BlinkMacSystemFont, sans-serif;
+          transition: background .15s, border-color .15s, transform .1s; }
+  .quiz-answers button:hover { background: rgba(255,255,255,.1); }
+  .quiz-answers button small { margin-left: auto; color: #8b98a8; font: 600 13px ui-monospace, Menlo, monospace; }
+  .quiz-answers button.right { background: rgba(110,224,122,.22); border-color: #6ee07a; }
+  .quiz-answers button.wrong { background: rgba(255,107,107,.22); border-color: #ff6b6b; }
+  .quiz-note { color: #8b98a8; font-size: 13px; margin: 18px 0 0; min-height: 1.2em; }
+  .quiz-big { font: 800 44px/1.1 -apple-system, BlinkMacSystemFont, sans-serif; margin: 0 0 8px; letter-spacing: -.02em; }
+  .quiz-again { justify-content: center; margin: 26px auto 0; }
+  @media (max-width: 860px) {
+    .story { grid-template-columns: 1fr; gap: 0; }
+    .story-stage { order: -1; top: 64px; height: auto; padding: 12px 0; background: var(--bg); z-index: 5; }
+    .story-stage .phone { --w: 150px; }
+    .step { min-height: 55vh; }
+    .quiz-chip { right: 12px; bottom: 12px; }
+  }
+  @media (hover: none) { .quiz-chip .hint { display: none; } }
+  .brand { white-space: nowrap; }
+  @media (max-width: 520px) { .lid nav a:not(.get) { display: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .step { opacity: 1; } .lens i { transition: none; } .leds.blink i { animation: none; }
+  }
+  .phone, .phone * { -webkit-user-drag: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+</style>
+</head>
+<body>
+
+<header class="shell">
+  <div class="topbar" id="topbar"><div class="wrap">
+    <div class="lid">
+      <a class="brand" href="#top" aria-label="Poke Lab home">
+        <span class="lens" id="lens" aria-hidden="true"><i></i></span>
+        <span class="leds" id="leds" aria-hidden="true"><i style="background:#ff6b6b"></i><i style="background:#ffd166"></i><i style="background:#6ee07a"></i></span>
+        Poke Lab
+      </a>
+      <nav aria-label="Site">
+        <a href="support.html">Support</a>
+        <a href="privacy.html">Privacy</a>
+        <a class="get" href="#get">Coming soon</a>
+      </nav>
+    </div>
+
+  </div></div>
+  <div class="wrap">
+    <div class="hero" id="top">
+      <div>
+        <p class="eyebrow rise" style="--i:0">VGC doubles · for iPhone</p>
+        <h1 class="rise" style="--i:1">Your Pokédex for doubles.</h1>
+        <p class="lede rise" style="--i:2">Browse every Pokémon that's legal this regulation, build your team, test it against the threats you'll face, then take it into a battle on Showdown.</p>
+        <div class="cta rise" style="--i:3">
+          <span class="btn primary" aria-disabled="true">Coming soon to the App Store</span>
+          <a class="btn ghost" href="#battle">See a battle</a>
+        </div>
+        <p class="avail rise" style="--i:4">For iPhone · iOS 26 or later</p>
+      </div>
+      <div class="phone">
+        <video autoplay muted loop playsinline preload="metadata" poster="media/battle-poster.jpg"
+               aria-label="A Poke Lab battle playing out turn by turn">
+          <source src="media/battle.mp4" type="video/mp4">
+        </video>
+        <img class="bezel" src="media/bezel-iphone-17-pro-deep-blue.png" alt="" aria-hidden="true">
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="proof fade">
+    <div class="wrap">
+      <div><strong>Showdown's own rules engine</strong><span>checks every set you build</span></div>
+      <div><strong>The Smogon damage calculator</strong><span>behind every calc</span></div>
+      <div><strong>Public tournament results</strong><span>for usage and real teams</span></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <div class="feature">
+        <div class="copy reveal">
+          <p class="kicker"><span class="n">01</span><span class="rule"></span>Dex</p>
+          <h2>Every legal Pokémon, at a glance.</h2>
+          <p>The Dex shows only what's legal in your team's regulation, with how often each one is used, so you're never building around something you can't bring.</p>
+          <ul>
+            <li>Filter to your team, or to what can Mega Evolve.</li>
+            <li>See at a glance who's already on your team.</li>
+          </ul>
+        </div>
+        <div class="phone"><picture><source srcset="media/dex.webp" type="image/webp"><img src="media/dex.jpg" alt="The Dex: a grid of Pokémon legal in Regulation M-C, with type and usage" loading="lazy"></picture><img class="bezel" src="media/bezel-iphone-17-pro-deep-blue.png" alt="" loading="lazy" aria-hidden="true"></div>
+      </div>
+
+      <div class="feature flip">
+        <div class="copy reveal">
+          <p class="kicker"><span class="n">02</span><span class="rule"></span>Team</p>
+          <h2>Build without leaving the Dex.</h2>
+          <p>Open any Pokémon to check its stats and abilities, then add it to your team in one tap. Your six stay in view as you go.</p>
+          <ul>
+            <li>Sets, items and Stat Points that are checked as you build.</li>
+            <li>Import and export in Showdown's format.</li>
+          </ul>
+        </div>
+        <div class="phone"><picture><source srcset="media/entry.webp" type="image/webp"><img src="media/entry.jpg" alt="Charizard's Dex entry with its stats and an Add to Team button" loading="lazy"></picture><img class="bezel" src="media/bezel-iphone-17-pro-deep-blue.png" alt="" loading="lazy" aria-hidden="true"></div>
+      </div>
+
+      <div class="story" id="battle">
+        <div class="story-copy">
+          <div class="copy reveal">
+            <p class="kicker"><span class="n">03</span><span class="rule"></span>Battle</p>
+            <h2>Battle on Showdown, and follow every turn.</h2>
+            <p>Take your team onto the Showdown ladder or challenge a friend. Each turn plays out one action at a time, with a short recap of who hit whom and how hard. Scroll to play a real game.</p>
+          </div>
+          <div class="step" data-start="0" data-end="3.9"><p class="step-turn">Turn 1</p><h3>Leads hit the field</h3><p>Both sides send out their leads, and Staraptor's Intimidate lowers their Attack.</p></div>
+          <div class="step" data-start="4" data-end="5.9"><p class="step-turn">Turn 1</p><h3>Rain, then a Mega</h3><p>Their Politoed's rain starts falling and their Gengar Mega Evolves, each one called out on the stage.</p></div>
+          <div class="step" data-start="6" data-end="12.9"><p class="step-turn">Turn 1</p><h3>Protect and Wide Guard</h3><p>Staraptor Protects from Shadow Ball. Their Wide Guard stops your Heat Wave. You see every block, not just the damage.</p></div>
+          <div class="step" data-start="13" data-end="15.9"><p class="step-turn">Turn 2</p><h3>Set up, and a critical hit</h3><p>Swords Dance takes Staraptor to +2. Scald burns Charizard, then Heat Wave lands a critical hit.</p></div>
+          <div class="step" data-start="16" data-end="18.9"><p class="step-turn">Turn 2</p><h3>A knockout</h3><p>Their Gengar's Sludge Bomb knocks out Staraptor, and the recap shows exactly how.</p></div>
+          <div class="step" data-start="19" data-end="23"><p class="step-turn">Turn 3</p><h3>Your next move</h3><p>Garchomp comes in, their Icy Wind lowers your Speed, and it's your call again.</p></div>
+        </div>
+        <div class="story-stage">
+          <div class="phone"><video id="storyVideo" muted playsinline preload="metadata" poster="media/battle-poster.jpg" aria-label="A Poke Lab battle, played one step at a time as you scroll"><source src="media/battle.mp4" type="video/mp4"></video><img class="bezel" src="media/bezel-iphone-17-pro-deep-blue.png" alt="" aria-hidden="true"></div>
+          <div class="story-progress" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="more">
+    <div class="wrap">
+      <h2 class="reveal">Built for the way you play.</h2>
+      <div class="grid">
+        <div class="reveal" style="--i:0"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8 19.5 5.6v6.1c0 4.6-3.2 8-7.5 9.5-4.3-1.5-7.5-4.9-7.5-9.5V5.6Z"/><path d="M13 7.5 10 12.5h3l-1.5 4"/></svg></span><h3>Test your team</h3><p>See which common threats your team handles, and run damage calcs before you lock a set.</p></div>
+        <div class="reveal" style="--i:1"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="3"/><path d="M10 18h4"/></svg></span><h3>Works offline</h3><p>After the first launch, building and testing need no connection.</p></div>
+        <div class="reveal" style="--i:2"><span class="ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.2 9.5 4.3 4.3 0 0 0 7 18Z"/></svg></span><h3>Synced with iCloud</h3><p>Your teams follow you between devices through your own iCloud account.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="privacy">
+    <div class="wrap reveal">
+      <h2>No ads. No tracking.</h2>
+      <p>Your teams stay on your device and in your iCloud. When you battle, you sign in to Showdown, and your password goes only to Showdown. <a href="privacy.html">Read the privacy policy</a>.</p>
+    </div>
+  </section>
+</main>
+
+<section class="shell closing" id="get">
+  <div class="wrap">
+    <h2 class="reveal">Build your next team.</h2>
+    <p>Poke Lab is coming to the App Store for iPhone.</p>
+    <div class="cta"><span class="btn primary" aria-disabled="true">Coming soon to the App Store</span></div>
+  </div>
+</section>
+
+<button class="quiz-chip" id="quizChip" type="button" aria-haspopup="dialog"><span class="hint">Press <kbd>T</kbd> · </span>Type quiz</button>
+
+<div class="quiz" id="quiz" role="dialog" aria-modal="true" aria-labelledby="quizTitle" hidden>
+  <div class="quiz-hud">
+    <span id="quizTitle">TYPE QUIZ</span>
+    <span>STREAK <b id="qStreak">0</b> · BEST <b id="qBest">0</b> · <button type="button" id="qQuit">ESC TO QUIT</button></span>
+  </div>
+  <div class="quiz-board" id="qBoard">
+    <p class="quiz-ask">How effective is</p>
+    <div class="quiz-match"><span class="qt" id="qAtk">Fire</span><span class="quiz-vs">against</span><span class="qt" id="qDef">Grass</span></div>
+    <div class="quiz-timer"><i id="qTimer"></i></div>
+    <div class="quiz-answers" id="qAnswers">
+      <button type="button" data-m="2"><kbd>1</kbd>Super effective<small>2×</small></button>
+      <button type="button" data-m="1"><kbd>2</kbd>Neutral<small>1×</small></button>
+      <button type="button" data-m="0.5"><kbd>3</kbd>Not very<small>½×</small></button>
+      <button type="button" data-m="0"><kbd>4</kbd>No effect<small>0×</small></button>
+    </div>
+    <p class="quiz-note" id="qNote">Answer before the bar runs out.</p>
+  </div>
+  <div class="quiz-over" id="qOver" hidden>
+    <p class="quiz-big" id="qOverTitle">Streak 0</p>
+    <p class="quiz-note" id="qOverNote"></p>
+    <button type="button" class="quiz-again" id="qAgain"><kbd>Space</kbd> Play again</button>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="row">
+      <span>© 2026 Rezaberi Labs</span>
+      <nav aria-label="Footer"><a href="support.html">Support</a><a href="privacy.html">Privacy</a><span>support@rezaberi.com</span></nav>
+    </div>
+    <p class="legal">Poke Lab is a fan-made tool and is not affiliated with Nintendo, Game Freak, Creatures or The Pokémon Company. Pokémon and Pokémon character names are trademarks of Nintendo.</p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const bar = document.getElementById('topbar');
+  const onScroll = () => bar.classList.toggle('scrolled', window.scrollY > 24);
+  onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
+
+  const els = document.querySelectorAll('.reveal, .fade');
+  if (!('IntersectionObserver' in window)) { els.forEach(e => e.classList.add('in')); return; }
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.18, rootMargin: '0px 0px -40px 0px' });
+  els.forEach(e => io.observe(e));
+
+  // Play the battle loop only while it's on screen.
+  const v = document.querySelector('.hero video');
+  if (v) new IntersectionObserver(([e]) => { e.isIntersecting ? v.play().catch(() => {}) : v.pause(); }).observe(v);
+})();
+</script>
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Battle story: each step plays its part of the real game */
+  const v = document.getElementById('storyVideo');
+  const steps = [...document.querySelectorAll('.step')];
+  const bars = [...document.querySelectorAll('.story-progress i')];
+  /* The video keeps playing on its own; scrolling to a step jumps it there.
+     The lit caption and progress bar follow what's actually on screen. */
+  const starts = steps.map(s => +s.dataset.start);
+  const stepAt = t => { let i = 0; starts.forEach((s, k) => { if (t >= s) i = k; }); return i; };
+  let current = -1, from = 0;
+  const light = i => {
+    if (i === current) return; current = i;
+    steps.forEach((s, k) => s.classList.toggle('active', k === i));
+    bars.forEach((b, k) => b.classList.toggle('on', k === i));
+  };
+  if (v) {
+    v.addEventListener('timeupdate', () => light(stepAt(v.currentTime)));
+    // At the end, start again from the step the reader scrolled to
+    v.addEventListener('ended', () => { try { v.currentTime = from; } catch (e) {} if (!reduce) v.play().catch(() => {}); });
+  }
+  const jump = el => {
+    const i = steps.indexOf(el); from = starts[i];
+    if (!v) { light(i); return; }
+    if (stepAt(v.currentTime) !== i) { try { v.currentTime = from; } catch (e) {} }
+    light(i);
+  };
+  if ('IntersectionObserver' in window && steps.length) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) jump(e.target); }), { rootMargin: '-45% 0px -45% 0px' });
+    steps.forEach(s => io.observe(s));
+    const story = document.getElementById('battle');
+    if (v && story) new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !reduce) v.play().catch(() => {}); else v.pause();
+    }, { threshold: 0.15 }).observe(story);
+  }
+
+  /* Lens follows the cursor; LEDs blink as each section arrives */
+  const lens = document.getElementById('lens'), leds = document.getElementById('leds');
+  if (lens && !reduce) addEventListener('pointermove', e => {
+    const r = lens.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 300) * 8;
+    lens.style.setProperty('--lx', (dx / d * k - 1) + 'px'); lens.style.setProperty('--ly', (dy / d * k - 1) + 'px');
+  }, { passive: true });
+  document.querySelectorAll('.lid .get, .btn.primary').forEach(b => {
+    b.addEventListener('pointerenter', () => lens && lens.classList.add('flash'));
+    b.addEventListener('pointerleave', () => lens && lens.classList.remove('flash'));
+  });
+  if (leds && !reduce && 'IntersectionObserver' in window) {
+    const so = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { leds.classList.remove('blink'); void leds.offsetWidth; leds.classList.add('blink'); } }), { threshold: .35 });
+    document.querySelectorAll('main > section, main > .proof, .closing').forEach(s => so.observe(s));
+  }
+
+  /* Type quiz */
+  const T = ['Normal','Fire','Water','Electric','Grass','Ice','Fighting','Poison','Ground','Flying','Psychic','Bug','Rock','Ghost','Dragon','Dark','Steel','Fairy'];
+  const C = {Normal:'#9a9a7c',Fire:'#e8732f',Water:'#4f86e6',Electric:'#e0b40f',Grass:'#5aa846',Ice:'#5ec2c0',Fighting:'#bf3a2b',Poison:'#9a45a0',Ground:'#c9a24e',
+             Flying:'#8f7fe6',Psychic:'#ec4f7d',Bug:'#93a521',Rock:'#a8923a',Ghost:'#6a538f',Dragon:'#6a3cf0',Dark:'#6b5345',Steel:'#8f8fae',Fairy:'#e07fb0'};
+  const X = { // attacking type -> defending types that aren't 1x
+    Normal:{Rock:.5,Ghost:0,Steel:.5}, Fire:{Fire:.5,Water:.5,Grass:2,Ice:2,Bug:2,Rock:.5,Dragon:.5,Steel:2},
+    Water:{Fire:2,Water:.5,Grass:.5,Ground:2,Rock:2,Dragon:.5}, Electric:{Water:2,Electric:.5,Grass:.5,Ground:0,Flying:2,Dragon:.5},
+    Grass:{Fire:.5,Water:2,Grass:.5,Poison:.5,Ground:2,Flying:.5,Bug:.5,Rock:2,Dragon:.5,Steel:.5},
+    Ice:{Fire:.5,Water:.5,Grass:2,Ice:.5,Ground:2,Flying:2,Dragon:2,Steel:.5},
+    Fighting:{Normal:2,Ice:2,Poison:.5,Flying:.5,Psychic:.5,Bug:.5,Rock:2,Ghost:0,Dark:2,Steel:2,Fairy:.5},
+    Poison:{Grass:2,Poison:.5,Ground:.5,Rock:.5,Ghost:.5,Steel:0,Fairy:2}, Ground:{Fire:2,Electric:2,Grass:.5,Poison:2,Flying:0,Bug:.5,Rock:2,Steel:2},
+    Flying:{Electric:.5,Grass:2,Fighting:2,Bug:2,Rock:.5,Steel:.5}, Psychic:{Fighting:2,Poison:2,Psychic:.5,Dark:0,Steel:.5},
+    Bug:{Fire:.5,Grass:2,Fighting:.5,Poison:.5,Flying:.5,Psychic:2,Ghost:.5,Dark:2,Steel:.5,Fairy:.5},
+    Rock:{Fire:2,Ice:2,Fighting:.5,Ground:.5,Flying:2,Bug:2,Steel:.5}, Ghost:{Normal:0,Psychic:2,Ghost:2,Dark:.5},
+    Dragon:{Dragon:2,Steel:.5,Fairy:0}, Dark:{Fighting:.5,Psychic:2,Ghost:2,Dark:.5,Fairy:.5},
+    Steel:{Fire:.5,Water:.5,Electric:.5,Ice:2,Rock:2,Steel:.5,Fairy:2}, Fairy:{Fire:.5,Fighting:2,Poison:.5,Dragon:2,Dark:2,Steel:.5} };
+  const mult = (a, d) => (X[a][d] ?? 1);
+  const pools = {2:[],1:[],0.5:[],0:[]}; T.forEach(a => T.forEach(d => pools[mult(a,d)].push([a,d])));
+  const LABEL = {2:'super effective (2×)',1:'neutral (1×)',0.5:'not very effective (½×)',0:'no effect (0×)'};
+  const $ = id => document.getElementById(id);
+  const quiz = $('quiz'), chip = $('quizChip'), board = $('qBoard'), over = $('qOver'), bar = $('qTimer');
+  let streak = 0, best = 0, cur = null, t0 = 0, raf = 0, lock = false, prevFocus = null;
+  try { best = +localStorage.getItem('pokelab-typequiz-best') || 0; } catch (e) {}
+  const limit = () => Math.max(2200, 5000 - streak * 150);
+  const paint = (el, t) => { el.textContent = t; el.style.background = C[t]; };
+  function next() {
+    const ks = [2,1,0.5,0], w = [3,3,3,1.2]; let r = Math.random() * w.reduce((a,b)=>a+b), k = 0;
+    while ((r -= w[k]) > 0) k++;
+    const pool = pools[ks[k]]; cur = pool[Math.floor(Math.random() * pool.length)];
+    paint($('qAtk'), cur[0]); paint($('qDef'), cur[1]);
+    document.querySelectorAll('#qAnswers button').forEach(b => b.className = '');
+    $('qNote').textContent = streak ? 'Keep going.' : 'Answer before the bar runs out.';
+    lock = false; t0 = performance.now(); cancelAnimationFrame(raf); tick();
+  }
+  function tick() {
+    const p = Math.min(1, (performance.now() - t0) / limit());
+    bar.style.transform = `scaleX(${1 - p})`;
+    if (p >= 1) return finish(null);
+    raf = requestAnimationFrame(tick);
+  }
+  function answer(m) {
+    if (lock || !cur) return; lock = true; cancelAnimationFrame(raf);
+    const right = mult(cur[0], cur[1]);
+    document.querySelectorAll('#qAnswers button').forEach(b => { const v = +b.dataset.m; if (v === right) b.classList.add('right'); else if (v === m) b.classList.add('wrong'); });
+    if (m === right) { streak++; $('qStreak').textContent = streak; if (streak > best) { best = streak; $('qBest').textContent = best; try { localStorage.setItem('pokelab-typequiz-best', best); } catch (e) {} } setTimeout(next, 450); }
+    else setTimeout(() => finish(m), 700);
+  }
+  function finish(m) {
+    lock = true; cancelAnimationFrame(raf);
+    const right = mult(cur[0], cur[1]);
+    board.hidden = true; over.hidden = false;
+    $('qOverTitle').textContent = `Streak ${streak}`;
+    $('qOverNote').textContent = `${m === null ? 'Out of time. ' : ''}${cur[0]} on ${cur[1]} is ${LABEL[right]}. Best: ${best}.`;
+    $('qAgain').focus();
+  }
+  function start() { streak = 0; $('qStreak').textContent = 0; $('qBest').textContent = best; over.hidden = true; board.hidden = false; next(); }
+  function open() { if (!quiz.hidden) return; prevFocus = document.activeElement; quiz.hidden = false; document.body.style.overflow = 'hidden'; start(); quiz.querySelector('#qAnswers button').focus(); }
+  function close() { cancelAnimationFrame(raf); quiz.hidden = true; document.body.style.overflow = ''; prevFocus && prevFocus.focus && prevFocus.focus(); }
+  chip.addEventListener('click', open); $('qQuit').addEventListener('click', close); $('qAgain').addEventListener('click', start);
+  document.querySelectorAll('#qAnswers button').forEach(b => b.addEventListener('click', () => answer(+b.dataset.m)));
+  addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const typing = /input|textarea|select/i.test(document.activeElement && document.activeElement.tagName);
+    if (quiz.hidden) { if (!typing && (e.key === 't' || e.key === 'T')) { e.preventDefault(); open(); } return; }
+    if (e.key === 'Escape') { e.preventDefault(); return close(); }
+    if (!over.hidden && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); return start(); }
+    const map = {'1':2,'2':1,'3':0.5,'4':0}; if (e.key in map && !board.hidden) { e.preventDefault(); answer(map[e.key]); }
+  });
+})();
+</script>
+<script>
+document.querySelectorAll('.phone img, .phone video').forEach(el => { el.draggable = false; });
+document.addEventListener('dragstart', e => { if (e.target.closest && e.target.closest('.phone')) e.preventDefault(); });
+</script>
+</body>
+</html>
