@@ -41,12 +41,18 @@ a{color:inherit}
 .fade{animation:fade .9s ease-out 1.6s both}
 @keyframes fade{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.fade{animation:none}}
+.brand{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.apps{display:flex;align-items:center;gap:12px}
+.apps small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.apps small a{font:inherit;text-decoration:none}
+.apps a{font-family:'Bricolage Grotesque',system-ui,sans-serif;font-weight:800;font-size:17px;letter-spacing:-.01em;text-decoration:underline;text-decoration-color:var(--mint);text-decoration-thickness:2px;text-underline-offset:5px}
+.apps a:hover,.apps a:focus-visible{text-decoration-color:#fff}
 </style>
 </head>
 <body>
 <canvas id="field" aria-hidden="true"></canvas>
 <header class="top fade">
-<h1 class="word panel">Rezaberi <span>Labs</span></h1>
+<div class="brand"><h1 class="word panel">Rezaberi <span>Labs</span></h1><nav class="apps panel" aria-label="Apps"><small><a href="/apps/">Apps</a></small><a href="/apps/pokelab/">Poke Lab</a></nav></div>
 <div class="hint panel" id="hint"><span id="hint-desk">Press WASD or <span class="arrows" aria-label="arrow keys"><svg viewBox="0 0 12 12" aria-hidden="true"><g transform="rotate(270 6 6)"><path d="M6 10.5V1.8M2.4 5.4 6 1.8l3.6 3.6"/></g></svg><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 10.5V1.8M2.4 5.4 6 1.8l3.6 3.6"/></svg><svg viewBox="0 0 12 12" aria-hidden="true"><g transform="rotate(90 6 6)"><path d="M6 10.5V1.8M2.4 5.4 6 1.8l3.6 3.6"/></g></svg><svg viewBox="0 0 12 12" aria-hidden="true"><g transform="rotate(180 6 6)"><path d="M6 10.5V1.8M2.4 5.4 6 1.8l3.6 3.6"/></g></svg></span> to play</span><span id="hint-touch" hidden>Swipe to play</span></div>
 <button class="hud" id="hud" type="button" hidden aria-live="polite"><span id="hud-main">SCORE 0000</span><small id="hud-sub">BEST 0000</small></button>
 </header>
